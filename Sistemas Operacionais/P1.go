@@ -14,15 +14,6 @@ com dois buffers).
 
 */
 
-//////////////////////////////////////////////////////
-/*READ ME
-	Para evitar que um mesmo Thread consiga useResource
-	duas vezes, foi criada uma rscrutura 'Thread' com 
-	um booleano para verifithread se ele já rscá resource1ionado.
-	Portanto, os métodos 'entrar' e 'sair' recebem um 
-	objeto 'Thread' como parâmetro, ao invés do id.
-*/
-
 package main
 
 import (
@@ -30,14 +21,14 @@ import (
 	"time"
 )
 
-type Resource struct { //rscrutura Resource
+type Resource struct { //estrutura Resource
 	id string
 	buffer chan string
 	TOTAL, free int 
 	lock chan int
 }
 
-type Thread struct {
+type Thread struct { //estrutura Thread
 	id string
 	busy bool
 }
@@ -54,7 +45,7 @@ func NewThread(id string) Thread {
 	return t
 }
 
-func runResource(rsc *Resource, thread Thread){
+func runResource(rsc *Resource, thread Thread){ // função principal que ativa a concorrência
 	for {
 		if thread.busy == false {
 			useResource(rsc, thread)
@@ -72,14 +63,15 @@ func useResource(rsc *Resource, thread Thread){
 		rsc.buffer <- thread.id
 		fmt.Print(thread.id, " usando ", rsc.id, "\n")
 		<- rsc.lock
-		sair(rsc, thread)
+		freeResource(rsc, thread)
 	} else {
+		fmt.Print(thread.id, " tentou usar ", rsc.id, "\n")
 		<- rsc.lock
-		time.Sleep(55*time.Millisecond)
+		time.Sleep(time.Second)
 	}
 }
 
-func sair(rsc *Resource, thread Thread){
+func freeResource(rsc *Resource, thread Thread){
 	wait()
 	rsc.lock <- 1 //uso do lock para bloquear a saída para outras Threads
 	fmt.Print(<- rsc.buffer, " liberou ", rsc.id, "\n")
@@ -117,5 +109,5 @@ func main() {
 	go runResource(&resource2, t4)
 	go runResource(&resource2, t5)
 
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 15)
 }
